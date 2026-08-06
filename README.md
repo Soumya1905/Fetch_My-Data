@@ -21,3 +21,8 @@ A full-stack file transfer application built using Kotlin.
 - Download files to Android
 - Upload files (In Progress)
 - Folder navigation
+
+## Missing Features
+ - No auto connect need to make QR connection
+ - Files not encrypted in transit
+ - Placeholders not changed yet
