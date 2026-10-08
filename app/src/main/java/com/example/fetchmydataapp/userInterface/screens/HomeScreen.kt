@@ -9,14 +9,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -24,17 +27,47 @@ import androidx.navigation.NavController
 import com.example.fetchmydataapp.userInterface.components.ActionCard
 import com.example.fetchmydataapp.userInterface.navigation.Routes
 import com.example.fetchmydataapp.viewmodel.FileViewModel
+import com.example.fetchmydataapp.viewmodel.PairingViewModel
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 
 @Composable
 fun HomeScreen(navController: NavController){
     val viewModel: FileViewModel = viewModel()
+    val pairingViewModel: PairingViewModel = viewModel()
     val isConnected by viewModel.isConnected.collectAsState()
+    val pairing by pairingViewModel.pairing.collectAsState()
+    val pairError by pairingViewModel.pairError.collectAsState()
+
+    val context = LocalContext.current
+
+    val scannerOptions = remember {
+        GmsBarcodeScannerOptions.Builder()
+            .setBarcodeFormats(Barcode.FORMAT_QR_CODE)
+            .build()
+    }
+
+    fun launchScan() {
+        GmsBarcodeScanning.getClient(context, scannerOptions)
+            .startScan()
+            .addOnSuccessListener { barcode ->
+                barcode.rawValue?.let { pairingViewModel.pairFromQr(it) }
+            }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.checkConnection()
     }
+
+    LaunchedEffect(pairing) {
+        if (pairing != null) {
+            viewModel.checkConnection()
+        }
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -59,11 +92,21 @@ fun HomeScreen(navController: NavController){
                 )
                 Spacer(modifier = Modifier.padding(10.dp))
                 Text(
-                    text = "Laptop-name-here",
+                    text = pairing?.host ?: "Not paired yet",
                     fontSize = 20.sp
                 )
-                Text("IP-address-here",
-                    fontSize = 20.sp)
+                pairing?.let {
+                    Text("Port: ${it.port}", fontSize = 20.sp)
+                }
+                pairError?.let {
+                    Text(it, fontSize = 14.sp)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(onClick = { launchScan() }) {
+                    Text(if (pairing == null) "Pair with Laptop" else "Re-pair")
+                }
             }
         }
         Spacer(modifier = Modifier.height(24.dp))
@@ -75,7 +118,7 @@ fun HomeScreen(navController: NavController){
         Spacer(modifier = Modifier.height(12.dp))
 
         ActionCard("Upload", onClick = {
-            navController.navigate(Routes.UPLOAD)
+            navController.navigate(Routes.upload())
         })
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -94,9 +137,9 @@ fun HomeScreen(navController: NavController){
             modifier = Modifier.fillMaxWidth()
         ){
             if(isConnected) {
-                Text("\uD83D\uDFE2 Connected")
+                Text("🟢 Connected")
             } else {
-                Text("\uD83D\uDD34 Disconnected")
+                Text("🔴 Disconnected")
             }
         }
     }

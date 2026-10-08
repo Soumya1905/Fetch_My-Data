@@ -1,6 +1,7 @@
 package com.example.fetchmydataapp.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fetchmydataapp.model.FileInfo
 import com.example.fetchmydataapp.network.ApiService
@@ -9,8 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class FileViewModel: ViewModel(){
-    private val apiService = ApiService()
+class FileViewModel(application: Application): AndroidViewModel(application){
+    private val apiService = ApiService(application)
 
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
@@ -61,5 +62,9 @@ class FileViewModel: ViewModel(){
                 _isConnected.value = false
             }
         }
+    }
+
+    fun refresh(){
+        loadFiles(_currentPath.value)
     }
 }

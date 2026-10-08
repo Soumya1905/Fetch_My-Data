@@ -20,19 +20,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.fetchmydataapp.network.ApiService
 import com.example.fetchmydataapp.viewmodel.UploadViewModel
 
 @Composable
 fun UploadScreen(
-        navController: NavController
+        navController: NavController,
+        targetPath: String = ""
 ){
     val uploadViewModel: UploadViewModel = viewModel()
-    val context = LocalContext.current
 
     val isUploading by uploadViewModel.isUploaing.collectAsState()
     val uploadMessage by uploadViewModel.uploadMessage.collectAsState()
@@ -55,12 +53,19 @@ fun UploadScreen(
     ) {
         Spacer(modifier = Modifier.height(24.dp))
 
+        Text(
+            text = "Uploading to: /" + targetPath,
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Text("Selected File:", style = MaterialTheme.typography.titleLarge)
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            selectedFile?.let{ ApiService().getFileName(LocalContext.current,it)}
+            selectedFile?.let{ uploadViewModel.getFileNameFor(it) }
                 ?:"No File Selected"
         )
 
@@ -80,7 +85,7 @@ fun UploadScreen(
             enabled = selectedFile != null && !isUploading,
             onClick = {
                 selectedFile?.let{
-                    uploadViewModel.uploadFile(context,it)
+                    uploadViewModel.uploadFile(it, targetPath)
                 }
             }
         ){

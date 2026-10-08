@@ -14,9 +14,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.fetchmydataapp.ui.theme.FetchMyDataAppTheme
 import com.example.fetchmydataapp.userInterface.navigation.Routes
 import com.example.fetchmydataapp.userInterface.screens.DownloadScreen
@@ -68,8 +70,12 @@ class MainActivity : ComponentActivity() {
                             ViewFilePage(navController)
                         }
 
-                        composable(Routes.UPLOAD){
-                            UploadScreen(navController)
+                        composable(
+                            route = Routes.UPLOAD,
+                            arguments = listOf(navArgument("path") { type = NavType.StringType; defaultValue = "" })
+                        ) { backStackEntry ->
+                            val path = backStackEntry.arguments?.getString("path") ?: ""
+                            UploadScreen(navController, path)
                         }
 
                         composable(Routes.DOWNLOAD){
